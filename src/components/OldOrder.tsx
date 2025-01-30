@@ -12,19 +12,19 @@ import { Calendar } from 'react-native-calendars';
 
 // Dynamic Calculation of Barber Data
 const barberData = {
-  "2024-11-20": {
+  "2025-01-27": {
     details: [
       { name: "John Doe", service: "Haircut", AmountOfpay: 500, payment: "Online" },
       { name: "Jane Smith", service: "Shaving", AmountOfpay: 500, payment: "Cash" },
     ],
   },
-  "2024-11-21": {
+  "2025-01-29": {
     details: [
       { name: "Mike Ross", service: "Beard Trim", AmountOfpay: 500, payment: "Cash" },
       { name: "Rachel Green", service: "Hair Spa", AmountOfpay: 500, payment: "Online" },
     ],
   },
-  "2024-11-22": {
+  "2025-01-28": {
     details: [
       { name: "Harvey Specter", service: "Haircut", AmountOfpay: 500, payment: "Online" },
       { name: "Donna Paulsen", service: "Hair Color", AmountOfpay: 500, payment: "Cash" },

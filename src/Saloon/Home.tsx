@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet, Animated, Dimensions, Image, ScrollView, Modal } from 'react-native';
-
+import axios from 'axios';
 const ContactList = ({ navigation }) => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [sidebarAnimation] = useState(new Animated.Value(-Dimensions.get('window').width));
   const [activeView, setActiveView] = useState('Total Orders');
   const [selectedForPayment, setSelectedForPayment] = useState(null);
+  const [contacts, setContacts] = useState([]);
+
 
   const handleCardPress = (serviceName) => {
     navigation.navigate(serviceName);
@@ -15,15 +17,31 @@ const ContactList = ({ navigation }) => {
     navigation.navigate('LoginPage');
   };
 
-  const [contacts, setContacts] = useState([
-    { Uid: 1, Name: 'Vikraam', TimeSlot: 1, service: "Shaving",payment: "Online", Status: 'Pending', Amount: 2000 },
-    { Uid: 2, Name: 'Gokul', TimeSlot: 9, service: "Shaving",payment: "Cash", Status: 'Paid', Amount: 1000 },
-    { Uid: 3, Name: 'Raja', TimeSlot: 10, service: "Shaving",payment: "Online", Status: 'Paid', Amount: 1500 },
-    { Uid: 4, Name: 'Rani', TimeSlot: 11, service: "Shaving",payment: "Cash", Status: 'Paid', Amount: 3000 },
-    { Uid: 5, Name: 'Gokul', TimeSlot: 12, service: "Shaving",payment: "Online", Status: 'Pending', Amount: 1000 },
-    { Uid: 6, Name: 'Raja', TimeSlot: 2, service: "Shaving",payment: "Cash", Status: 'Completed', Amount: 1500 },
-    { Uid: 7, Name: 'Rani', TimeSlot: 4, service: "Shaving",payment: "Online", Status: 'Paid', Amount: 3000 },
-  ]);
+  const [loading,setLoading] =useState(true);
+   useEffect(() => {
+
+       const fetchData = async () => {
+         try {
+           const response = await fetch('https://a716-59-97-51-97.ngrok-free.app/app/get/saloon/orders/');
+           if (!response.ok) {
+             throw new Error(`HTTP error! Status: ${response.status}`);
+           }
+           const data = await response.json();
+           setContacts(data);
+           console.log(contacts,"from saloon page");
+           
+           
+         } catch (error) {
+           Alert.alert('Error', 'Failed to fetch data. Please try again.');
+           console.error(error);
+         }finally{
+           setLoading(false);
+           console.log(contacts,"from saloon page");
+           
+         }
+       };
+       fetchData();
+     }, []);
 
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
@@ -41,8 +59,8 @@ const ContactList = ({ navigation }) => {
 
   const calculateTotalCash = () => {
     return contacts
-      .filter((contact) => contact.Status === 'Paid' || contact.Status === 'Completed')
-      .reduce((total, contact) => total + contact.Amount, 0);
+      .filter((contact) => contact.payment_status === 'Paid' || contact.payment_status === 'Completed')
+      .reduce((total, contact) => total +(parseFloat(contact.amount)||0), 0);
   };
   
 
@@ -56,8 +74,8 @@ const ContactList = ({ navigation }) => {
     } else {
       setContacts((prevContacts) =>
         prevContacts.map((contact) =>
-          contact.Uid === uid
-            ? { ...contact, Status: newStatus, PaymentMode: paymentMode }
+          contact.id === 1
+            ? { ...contact, payment_status: newStatus, payment_type: paymentMode }
             : contact
         )
       );
@@ -66,17 +84,22 @@ const ContactList = ({ navigation }) => {
   };
   
 
-  const pendingOrders = contacts.filter((contact) => contact.Status === 'Pending');
-  const paidOrders = contacts.filter((contact) => contact.Status === 'Paid');
-  const completedOrders = contacts.filter((contact) => contact.Status === 'Completed');
+  const pendingOrders = contacts.filter((contact) => contact.payment_status === 'Pending');
+  const paidOrders = contacts.filter((contact) => contact.payment_status === 'Paid');
+  const completedOrders = contacts.filter((contact) => contact.payment_status === 'Completed');
   const totalCash = contacts
-    .filter((contact) => contact.Status === 'Paid' || contact.Status === 'Completed')
-    .reduce((sum, contact) => sum + contact.Amount, 0);
+    .filter((contact) => contact.payment_status === 'Paid' || contact.payment_status === 'Completed')
+    .reduce((sum, contact) => sum + contact.amount, 0);
+if(contacts.length > 0) {
+  console.log(contacts.length);
+  
+
 
   return (
     <View style={styles.container}>
+    
       <View style={styles.navbar}>
-
+      
           <Text style={styles.navbarTitle}>SALOON</Text>
 
           <TouchableOpacity onPress={toggleSidebar} style={styles.navbarButton}>
@@ -144,19 +167,19 @@ const ContactList = ({ navigation }) => {
       <ScrollView style={styles.contentContainer}>
         {activeView === 'Total Orders' && (
           <View style={styles.listContainer}>
-            {paidOrders.map((contact) => (
-              <View key={contact.Uid} style={styles.card}>
-                <Text style={styles.cardTitle}>{contact.Name}</Text>
-                <Text style={styles.cardText}>Time Slot: {contact.TimeSlot}</Text>
-                <Text style={styles.cardText}>Service: {contact.service}</Text>
-                <Text style={styles.cardText}>Status: {contact.Status}</Text>
-                <Text style={styles.cardText}>Payment: {contact.payment}</Text>
-                <Text style={styles.cardText}>Amount: ₹{contact.Amount}</Text>
+            {contacts.map((contact) => (
+              <View key={contact.id} style={styles.card}>
+                <Text style={styles.cardTitle}>name:{contact.username}</Text>
+                <Text style={styles.cardText}>Time Slot: {contact.time }</Text>
+                <Text style={styles.cardText}>Service: {contact.services}</Text>
+                <Text style={styles.cardText}>Status: {contact.payment_status}</Text>
+                <Text style={styles.cardText}>Payment: {contact.payment_type}</Text>
+                <Text style={styles.cardText}>Amount: ₹{contact.amount}</Text>
                 <TouchableOpacity
                   style={[styles.cardButton, { backgroundColor: 'green' }]}
                   onPress={() => {
-                    updateContactStatus(contact.Uid, 'Completed');
-                    Alert.alert('Order Completed', `${contact.Name}'s order is marked as completed.`);
+                    updateContactStatus(contact.id, 'Completed');
+                    Alert.alert('Order Completed', `${contact.amount}'s order is marked as completed.`);
                   }}
                 >
                   <Text style={styles.cardButtonText}>Complete Order</Text>
@@ -169,20 +192,20 @@ const ContactList = ({ navigation }) => {
 {activeView === 'Total Pending' && (
   <View style={styles.listContainer}>
     {pendingOrders.map((contact) => (
-      <View key={contact.Uid} style={styles.card}>
-        <Text style={styles.cardTitle}>{contact.Name}</Text>
-        <Text style={styles.cardText}>Time Slot: {contact.TimeSlot}</Text>
-        <Text style={styles.cardText}>Status: {contact.Status}</Text>
-        <Text style={styles.cardText}>Service: {contact.service}</Text>
-        <Text style={styles.cardText}>Amount: ₹{contact.Amount}</Text>
+      <View key={contact.id} style={styles.card}>
+        <Text style={styles.cardTitle}>username:{contact.username}</Text>
+        <Text style={styles.cardText}>Time Slot: {contact.time}</Text>
+        <Text style={styles.cardText}>Status: {contact.payment_status}</Text>
+        <Text style={styles.cardText}>Service: {contact.services}</Text>
+        <Text style={styles.cardText}>Amount: ₹{contact.amount}</Text>
 
-        {selectedForPayment === contact.Uid ? (
+        {selectedForPayment === contact.id ? (
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <TouchableOpacity
               style={[styles.cardButton, { backgroundColor: 'green' }]}
               onPress={() => {
                 updateContactStatus(contact.Uid, 'Paid', 'Cash');
-                Alert.alert('Payment Received', `₹${contact.Amount} received in Cash.`);
+                Alert.alert('Payment Received', `₹${contact.amount} received in Cash.`);
               }}
             >
               <Text style={styles.cardButtonText}>Cash</Text>
@@ -200,7 +223,7 @@ const ContactList = ({ navigation }) => {
         ) : (
           <TouchableOpacity
             style={[styles.cardButton, { backgroundColor: 'orange' }]}
-            onPress={() => updateContactStatus(contact.Uid, 'SelectPayment')}
+            onPress={() => updateContactStatus(contact.id, 'SelectPayment')}
           >
             <Text style={styles.cardButtonText}>Accept Payment</Text>
           </TouchableOpacity>
@@ -214,13 +237,13 @@ const ContactList = ({ navigation }) => {
         {activeView === 'Total Completed' && (
           <View style={styles.listContainer}>
             {completedOrders.map((contact) => (
-              <View key={contact.Uid} style={styles.card}>
-                <Text style={styles.cardTitle}>{contact.Name}</Text>
-                <Text style={styles.cardText}>Time Slot: {contact.TimeSlot}</Text>
-                <Text style={styles.cardText}>Service: {contact.service}</Text>
-                <Text style={styles.cardText}>Status: {contact.Status}</Text>
-                <Text style={styles.cardText}>Payment: {contact.payment}</Text>
-                <Text style={styles.cardText}>Amount: ₹{contact.Amount}</Text>
+              <View key={contact.id} style={styles.card}>
+                <Text style={styles.cardTitle}>{contact.username}</Text>
+                <Text style={styles.cardText}>Time Slot: {contact.time}</Text>
+                <Text style={styles.cardText}>Service: {contact.services}</Text>
+                <Text style={styles.cardText}>Status: {contact.payment_status}</Text>
+                <Text style={styles.cardText}>Payment: {contact.payment_type}</Text>
+                <Text style={styles.cardText}>Amount: ₹{contact.amount}</Text>
                 <TouchableOpacity style={[styles.cardButton, { backgroundColor: 'gray' }]} disabled>
                   <Text style={styles.cardButtonText}>Completed</Text>
                 </TouchableOpacity>
@@ -270,7 +293,7 @@ const ContactList = ({ navigation }) => {
       </Animated.View>
     </View>
   );
-};
+}};
 
 
 

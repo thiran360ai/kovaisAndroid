@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import {
   View,
   Text,
@@ -14,28 +16,54 @@ import {
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading,setLoading]= useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = () => {
-    if (email.trim() === 'admin') { //&& password.trim() === '123'
-      Alert.alert('Login Successful!', `Welcome, ${email}`);
-      navigation.navigate('Dashboard'); // Navigate to Admin Dashboard page
-    } else if (email.trim() === 'salon') {
-      Alert.alert('Login Successful!', `Welcome, ${email}`);
-      navigation.navigate('SalonHome'); // Navigate to GYM Dashboard page
-    } else if (email.trim() === 'gym') {
-      Alert.alert('Login Successful!', `Welcome, ${email}`);
-      navigation.navigate('GymHome'); // Navigate to GYM Dashboard page
-    }else if (email.trim() === 'spa') {
-      Alert.alert('Login Successful!', `Welcome, ${email}`);
-      navigation.navigate('SpaHome'); // Navigate to Spa Dashboard page
-    }else if (email.trim() === 'hotel') {
-      Alert.alert('Login Successful!', `Welcome, ${email}`);
-      navigation.navigate('HotelHome'); // Navigate to Spa Dashboard page
-    } else {
-      Alert.alert('Invalid LogIn');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter email and password");
+      return;
     }
-    
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("https://a716-59-97-51-97.ngrok-free.app/app/Employee-login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      const { token, role } = data;
+
+      // Store auth token
+      await AsyncStorage.setItem("authToken", token);
+      await AsyncStorage.setItem("userRole", role);
+
+      // Navigate to the respective page based on role
+      if (role === "saloon") {
+        navigation.replace("Saloon");
+      } else if (role === "spa") {
+        navigation.replace("SpaScreen");
+      } else {
+        navigation.replace("HomeScreen"); // Default page if role is unknown
+      }
+    } catch (error) {
+      Alert.alert("Login Failed", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  
     // Clear input fields after login attempt
     setEmail('');
     setPassword('');

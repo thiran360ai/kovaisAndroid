@@ -15,11 +15,40 @@ const SignUpPage = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading,setLoading]= useState(true);
 
-  const handleSignUp = () => {
-    Alert.alert('Sign Up Successful!', `Welcome, ${name}`);
-    navigation.navigate('LoginPage'); // Navigate back to Login page
+  const handleRegister = async () => {
+    if (!name || !email || !password) {
+      Alert.alert("Error", "All fields are required");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("https://a716-59-97-51-97.ngrok-free.app/app/create-employee/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      Alert.alert("Success", "Registration Successful! Please log in.");
+      navigation.replace("LoginScreen"); // Navigate back to login
+    } catch (error) {
+      Alert.alert("Registration Failed", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <KeyboardAvoidingView

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet, Animated, Dimensions, Image, ScrollView, Modal } from 'react-native';
 
 const ContactList = ({ navigation }) => {
@@ -16,15 +16,34 @@ const ContactList = ({ navigation }) => {
     navigation.navigate('LoginPage');
   };
 
-  const [contacts, setContacts] = useState([
-    { Uid: 1, Name: 'Vikraam', TimeSlot: 1, service: "Shaving",payment: "Online", Status: 'Pending', Amount: 2000 },
-    { Uid: 2, Name: 'Gokul', TimeSlot: 9, service: "Shaving",payment: "Cash", Status: 'Paid', Amount: 1000 },
-    { Uid: 3, Name: 'Raja', TimeSlot: 10, service: "Shaving",payment: "Online", Status: 'Paid', Amount: 1500 },
-    { Uid: 4, Name: 'Rani', TimeSlot: 11, service: "Shaving",payment: "Cash", Status: 'Paid', Amount: 3000 },
-    { Uid: 5, Name: 'Gokul', TimeSlot: 12, service: "Shaving",payment: "Online", Status: 'Pending', Amount: 1000 },
-    { Uid: 6, Name: 'Raja', TimeSlot: 2, service: "Shaving",payment: "Cash", Status: 'Completed', Amount: 1500 },
-    { Uid: 7, Name: 'Rani', TimeSlot: 4, service: "Shaving",payment: "Online", Status: 'Paid', Amount: 3000 },
-  ]);
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    
+           const fetchData = async () => {
+             try {
+               const response = await fetch('https://8368-59-97-51-97.ngrok-free.app/app/get/spa/orders/');
+               if (!response.ok) {
+                 throw new Error(`HTTP error! Status: ${response.status}`);
+               }
+               const data = await response.json();
+               setContacts(data);
+               console.log(contacts,"from spa page");
+               
+               
+             } catch (error) {
+               Alert.alert('Error', 'Failed to fetch data. Please try again.');
+               console.error(error);
+             }finally{
+               setLoading(false);
+               console.log(contacts,"from spa page");
+               
+             }
+           };
+           fetchData();
+         }, []);
+    
+
 
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
@@ -43,7 +62,7 @@ const ContactList = ({ navigation }) => {
   const calculateTotalCash = () => {
     return contacts
       .filter((contact) => contact.Status === 'Paid' || contact.Status === 'Completed')
-      .reduce((total, contact) => total + contact.Amount, 0);
+      .reduce((total, contact) => total + (parseFloat(contact.amount)||0), 0);
   };
   
 
@@ -67,12 +86,12 @@ const ContactList = ({ navigation }) => {
   };
   
 
-  const pendingOrders = contacts.filter((contact) => contact.Status === 'Pending');
-  const paidOrders = contacts.filter((contact) => contact.Status === 'Paid');
-  const completedOrders = contacts.filter((contact) => contact.Status === 'Completed');
+  const pendingOrders = contacts.filter((contact) => contact.status === 'Pending');
+  const paidOrders = contacts.filter((contact) => contact.status === 'Paid');
+  const completedOrders = contacts.filter((contact) => contact.status === 'Completed');
   const totalCash = contacts
-    .filter((contact) => contact.Status === 'Paid' || contact.Status === 'Completed')
-    .reduce((sum, contact) => sum + contact.Amount, 0);
+    .filter((contact) => contact.status === 'Paid' || contact.status === 'Completed')
+    .reduce((sum, contact) => sum + contact.amount, 0);
 
   return (
     <View style={styles.container}>
@@ -143,12 +162,12 @@ const ContactList = ({ navigation }) => {
       <ScrollView style={styles.contentContainer}>
         {activeView === 'Total Orders' && (
           <View style={styles.listContainer}>
-            {paidOrders.map((contact) => (
-              <View key={contact.Uid} style={styles.card}>
+            {contacts.map((contact) => (
+              <View key={contact.id} style={styles.card}>
                 <Text style={styles.cardTitle}>{contact.Name}</Text>
-                <Text style={styles.cardText}>Time Slot: {contact.TimeSlot}</Text>
-                <Text style={styles.cardText}>Service: {contact.service}</Text>
-                <Text style={styles.cardText}>Status: {contact.Status}</Text>
+                <Text style={styles.cardText}>Time Slot: {contact.time}</Text>
+                <Text style={styles.cardText}>Service: {contact.services}</Text>
+                <Text style={styles.cardText}>Status: {contact.status}</Text>
                 <Text style={styles.cardText}>Payment: {contact.payment}</Text>
                 <Text style={styles.cardText}>Amount: ₹{contact.Amount}</Text>
                 <TouchableOpacity

@@ -10,38 +10,32 @@ const ContactList = ({navigation}) => {
   const [newContact, setNewContact] = useState({ Name: '', TimeSlot: '', Status: 'Active', Plan: '', Amount: '' });
   const [showAttendanceView, setShowAttendanceView] = useState(false);
 
-  const [contacts, setContacts] = useState([
-    {
-      Uid: 1,
-      Name: 'John Doe',
-      TimeSlot: 'Morning',
-      Status: 'Active',
-      Plan: 'Monthly',
-      Amount: 2000,
-      Attendance: 'Absent',
-      purchasedDate: '2024-11-15',
-    },
-    {
-      Uid: 2,
-      Name: 'Jane Smith',
-      TimeSlot: 'Evening',
-      Status: 'Active',
-      Plan: 'Quarterly',
-      Amount: 5000,
-      Attendance: 'Absent',
-      purchasedDate: '2024-08-15',
-    },
-    {
-      Uid: 3,
-      Name: 'Sam Wilson',
-      TimeSlot: 'Afternoon',
-      Status: 'Active',
-      Plan: 'Yearly',
-      Amount: 12000,
-      Attendance: 'Absent',
-      purchasedDate: '2023-11-01',
-    },
-  ]);
+  const [contacts, setContacts] = useState<{id:number;purchaseddate:string;status:string}>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+  
+         const fetchData = async () => {
+           try {
+             const response = await fetch('https://a716-59-97-51-97.ngrok-free.app/app/get/gym/orders/');
+             if (!response.ok) {
+               throw new Error(`HTTP error! Status: ${response.status}`);
+             }
+             const data = await response.json();
+             setContacts(data);
+             console.log(contacts,"from gym page");
+             
+             
+           } catch (error) {
+             Alert.alert('Error', 'Failed to fetch data. Please try again.');
+             console.error(error);
+           }finally{
+             setLoading(false);
+             console.log(contacts,"from gym page");
+             
+           }
+         };
+         fetchData();
+       }, []);
   useEffect(() => {
     updateContactStatuses();
   }, []);
@@ -76,12 +70,12 @@ const ContactList = ({navigation}) => {
         Quarterly: 150,
         Yearly: 360,
       };
-      const planDuration = planDurations[contact.Plan];
-      const purchasedDate = new Date(contact.purchasedDate);
+      const planDuration = planDurations[contact.plan];
+      const purchasedDate = new Date(contact.purchaseddate);
       const daysSincePurchase = Math.floor((currentDate - purchasedDate) / (1000 * 60 * 60 * 24));
 
       if (daysSincePurchase > planDuration) {
-        return { ...contact, Status: 'Inactive' };
+        return { ...contact, status: 'InActive' };
       }
       return contact;
     });
@@ -96,13 +90,13 @@ const ContactList = ({navigation}) => {
   };
 
 
-  const handlePayPress = (Uid) => {
+  const handlePayPress = (id) => {
     const currentDate = new Date().toISOString().split('T')[0]; // Get the current date in 'YYYY-MM-DD' format
   
     setContacts((prevContacts) =>
       prevContacts.map((contact) =>
-        contact.Uid === Uid
-          ? { ...contact, purchasedDate: currentDate, Status: 'Active' } // Update purchasedDate and Status
+        contact.id === id
+          ? { ...contact, purchaseddate: currentDate, status: 'Active' } // Update purchasedDate and Status
           : contact
       )
     );
@@ -125,7 +119,7 @@ const ContactList = ({navigation}) => {
     setContacts([
       ...contacts,
       {
-        Uid: contacts.length + 1,
+        id: contacts.length + 1,
         Name: newContact.Name,
         TimeSlot: newContact.TimeSlot,
         Status: 'Active',
@@ -141,17 +135,18 @@ const ContactList = ({navigation}) => {
     Alert.alert('Success', 'New contact added successfully!');
   };
 
-  const toggleAttendance = (Uid) => {
+  const toggleAttendance = (id) => {
     setContacts((prevContacts) =>
       prevContacts.map((contact) =>
-        contact.Uid === Uid
+        contact.id === id
           ? { ...contact, Attendance: contact.Attendance === 'Present' ? 'Absent' : 'Present' }
           : contact
       )
     );
   };
 
-  const filteredContacts = contacts.filter((contact) => contact.Status === activeView);
+  const filteredContacts = contacts.filter((contact) => contact.status === activeView);
+  console.log(filteredContacts,"filtered contacts");
 
   return (
     <View style={styles.container}>
@@ -186,7 +181,7 @@ const ContactList = ({navigation}) => {
           <Text style={styles.buttonText}>Active</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => handleButtonPress('Inactive')}
+          onPress={() => handleButtonPress('InActive')}
           style={styles.actionButton}
         >
           <Image
@@ -219,7 +214,7 @@ const ContactList = ({navigation}) => {
         <View style={styles.revenueCard}>
           <Text style={styles.cardTitle1}>Total Revenue</Text>
           <Text style={styles.revenueAmount}>
-            ₹{contacts.reduce((sum, contact) => sum + contact.Amount, 0)}
+            ₹{contacts.reduce((sum, contact) => sum + (parseFloat(contact.amount)||0), 0)}
           </Text>
         </View>
       )}
@@ -229,11 +224,11 @@ const ContactList = ({navigation}) => {
   <ScrollView style={styles.contentContainer}>
     <View style={styles.listContainer}>
       {contacts.map((contact) => (
-        <View key={contact.Uid} style={styles.card}>
+        <View key={contact.id} style={styles.card}>
           <View style={styles.cardInfo}>
-            <Text style={styles.cardTitle}>{contact.Name}</Text>
-            <Text style={styles.cardText}>Time Slot: {contact.TimeSlot}</Text>
-            <Text style={styles.cardText}>Plan: {contact.Plan}</Text>
+            <Text style={styles.cardTitle}>{contact.id}</Text>
+            <Text style={styles.cardText}>Time Slot: {contact.timeslot}</Text>
+            <Text style={styles.cardText}>Plan: {contact.plan}</Text>
             <Text
               style={[
                 styles.cardText,
@@ -244,7 +239,7 @@ const ContactList = ({navigation}) => {
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => toggleAttendance(contact.Uid)}
+            onPress={() => toggleAttendance(contact.id)}
             style={[
               styles.actionButton,
               contact.Attendance === 'Present' ? { backgroundColor: '#FF6B6B' } : { backgroundColor: '#4CAF50' },
@@ -264,23 +259,23 @@ const ContactList = ({navigation}) => {
       {!showAttendanceView && (
         <ScrollView style={styles.contentContainer}>
         {filteredContacts.map((contact) => (
-          <View key={contact.Uid} style={styles.card}>
-              <Text style={styles.cardTitle}>{contact.Name}</Text>
-              <Text style={styles.cardText}>Time Slot: {contact.TimeSlot}</Text>
-              <Text style={styles.cardText}>Plan: {contact.Plan}</Text>
-              <Text style={styles.cardText}>Status: {contact.Status}</Text>
-              <Text style={styles.cardText}>Date of Pay: {contact.purchasedDate}</Text>
-              <Text style={styles.cardText}>Amount: ₹{contact.Amount}</Text>
+          <View key={contact.id} style={styles.card}>
+              <Text style={styles.cardTitle}>{contact.name}</Text>
+              <Text style={styles.cardText}>Time Slot: {contact.timeslot}</Text>
+              <Text style={styles.cardText}>Plan: {contact.plan}</Text>
+              <Text style={styles.cardText}>Status: {contact.status}</Text>
+              <Text style={styles.cardText}>Date of Pay: {contact.purchaseddate}</Text>
+              <Text style={styles.cardText}>Amount: ₹{contact.amount}</Text>
 
-              {contact.Status === 'Active' && (
+              {contact.status === 'Active' && (
                 <TouchableOpacity style={styles.saveButton} onPress={()=>handleBuyProducts(contact.Name)}>
                   <Text style={styles.saveButtonText}>Buy Products</Text>
                 </TouchableOpacity>
               )}
-              {contact.Status === 'Inactive' && (
+              {contact.status === 'InActive' && (
                 <TouchableOpacity
                   style={styles.saveButton}
-                  onPress={() => handlePayPress(contact.Uid)} // Pass the Uid of the contact
+                  onPress={() => handlePayPress(contact.id)} // Pass the Uid of the contact
                 >
                   <Text style={styles.saveButtonText}>Pay</Text>
                 </TouchableOpacity>

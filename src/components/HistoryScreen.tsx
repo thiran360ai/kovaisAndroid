@@ -7,7 +7,7 @@ const HistoryScreen = () => {
     { Uid: 2, Name: 'Gokul', TimeSlot: 9,service: "Shaving",payment: "Cash", Status: 'Completed', Amount: 1000 },
     { Uid: 3, Name: 'Raja', TimeSlot: 10,service: "Shaving",payment: "Online", Status: 'Completed', Amount: 1500 },
     { Uid: 4, Name: 'Rani', TimeSlot: 11,service: "Shaving",payment: "Cash", Status: 'Completed', Amount: 3000 },
-    { Uid: 5, Name: 'Gokul', TimeSlot: 12,service: "Shaving",payment: "Online", Status: 'Completed', Amount: 1000 },
+    { Uid: 5, Name: 'Gokul', TimeSlot: 12,service: "Naveen",payment: "Online", Status: 'Completed', Amount: 1000 },
     { Uid: 6, Name: 'Raja', TimeSlot: 2,service: "Shaving",payment: "Cash", Status: 'Completed', Amount: 1500 },
     { Uid: 7, Name: 'Rani', TimeSlot: 4,service: "Shaving",payment: "Online", Status: 'Completed', Amount: 3000 },
   ]);
