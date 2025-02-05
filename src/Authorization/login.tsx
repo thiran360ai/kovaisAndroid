@@ -37,7 +37,7 @@ const LoginPage = ({ navigation }) => {
 
     try {
       // ✅ Make sure to replace with your updated ngrok URL
-      const apiUrl = 'https://api.capture360.ai/kovais/Employee-login/ ';
+      const apiUrl = ' ';
 
       console.log('🔵 Sending Login Request:', { email, password });
 
