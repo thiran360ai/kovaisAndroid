@@ -37,7 +37,7 @@ const SignUpPage = ({ navigation }) => {
 
     try {
       // ✅ Replace with your latest ngrok URL
-      const apiUrl = 'https://2fe9-59-97-51-97.ngrok-free.app/kovais/create-employee/';
+      const apiUrl = 'https://c47d-59-97-51-97.ngrok-free.app/kovais/create-employee/';
 
       console.log('Sending request to:', apiUrl);
       console.log('Request Payload:', { username, email, password });

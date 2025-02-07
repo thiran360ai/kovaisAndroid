@@ -27,7 +27,7 @@ const LoginPage = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const apiUrl = 'https://2fe9-59-97-51-97.ngrok-free.app/kovais/Employee-login/';
+      const apiUrl = 'https://c47d-59-97-51-97.ngrok-free.app/kovais/Employee-login/';
       console.log('🔵 Sending Login Request:', { email, password });
       
       const controller = new AbortController();
