@@ -71,7 +71,7 @@ const ContactList = ({navigation}) => {
   
          const fetchData = async () => {
            try {
-             const response = await fetch('https://edee-59-97-51-97.ngrok-free.app/kovais/get/gym/orders/');
+             const response = await fetch('https://2fe9-59-97-51-97.ngrok-free.app/kovais/get/gym/orders/');
              if (!response.ok) {
                throw new Error(`HTTP error! Status: ${response.status}`);
              }

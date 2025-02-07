@@ -1,146 +1,163 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { 
+  View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, PermissionsAndroid, Platform 
+} from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import Geolocation from 'react-native-geolocation-service';
 import { getDistance } from 'geolib';
 
 const AttendanceScreen = () => {
-  const permanentLocation = { latitude: 11.447674, longitude: 77.454854 }; // Permanent location (for check-in/out)
+  const permanentLocation = { latitude: 11.447674, longitude: 77.454854 };
   const [location, setLocation] = useState('');
-  const [completedDays, setCompletedDays] = useState({
-    '2024-11-26': { selected: true, selectedColor: '#FF0000', location: 'Gopichettipalayam' }, // Absent
-    '2024-11-27': { selected: true, selectedColor: '#4CAF50', location: 'Gopichettipalayam' }, // Present
-  });
+  const [userCoordinates, setUserCoordinates] = useState(null);
+  const [completedDays, setCompletedDays] = useState({});
   const [checkedIn, setCheckedIn] = useState(false);
   const [currentDate, setCurrentDate] = useState('');
+  const [username, setUsername] = useState(null);
+  const [employeeId, setEmployeeId] = useState(null);
 
-  const getCurrentLocation = () => {
-    return new Promise((resolve, reject) => {
-      Geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          resolve({ latitude, longitude });
-        },
-        (error) => {
-          reject(error);
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-      );
-    });
+  useEffect(() => {
+    getUserIdFromStorage();
+  }, []);
+
+  const getUserIdFromStorage = async () => {
+    try {
+      const storedUsername = await AsyncStorage.getItem('username');
+      const storedEmployeeId = await AsyncStorage.getItem('employeeId');
+      if (!storedUsername || !storedEmployeeId) {
+        Alert.alert('Error', 'No stored user information found.');
+        return false;
+      }
+      setUsername(storedUsername);
+      setEmployeeId(storedEmployeeId);
+      return true;
+    } catch (error) {
+      console.error('Error retrieving user ID:', error);
+      Alert.alert('Error', 'Failed to retrieve user information.');
+      return false;
+    }
+  };
+
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'This app needs access to your location to check in/out.',
+            buttonPositive: 'OK',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const fetchUserLocation = async () => {
+    const hasPermission = await requestLocationPermission();
+    if (!hasPermission) {
+      Alert.alert('Permission Denied', 'Location access is required for check-in.');
+      return;
+    }
+
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserCoordinates({ latitude, longitude });
+        setLocation(`${latitude}, ${longitude}`);
+      },
+      (error) => {
+        console.error("Location Error:", error);
+        Alert.alert('Error', 'Unable to fetch location. Please try again.');
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 }
+    );
   };
 
   const handleCheckInOut = async () => {
+    if (!userCoordinates) {
+      Alert.alert('Location Required', 'Please fetch your location before checking in.');
+      return;
+    }
+
+    const userDataAvailable = await getUserIdFromStorage();
+    if (!userDataAvailable) return;
+
     const today = moment().format('YYYY-MM-DD');
     const currentTime = moment();
     const checkInDeadline = moment(today).hour(10).minute(0).second(0);
     const checkOutStart = moment(today).hour(16).minute(0).second(0);
 
-    try {
-      const userLocation = await getCurrentLocation(); // Fetch user's current location
-      const distance = getDistance(userLocation, permanentLocation); // Calculate distance
+    const distance = getDistance(userCoordinates, permanentLocation);
+    console.log("Distance from location:", distance);
 
-      if (distance > 100) {
-        Alert.alert(
-          'Location Error',
-          'You must be within 100 meters of the specified location to check in or out.'
-        );
+    if (!checkedIn) {
+      const newCompletedDays = {
+        ...completedDays,
+        [today]: { selected: true, selectedColor: '#FFD700', location },
+      };
+      setCompletedDays(newCompletedDays);
+      setCheckedIn(true);
+      setCurrentDate(today);
+      Alert.alert(`Checked in at ${location}`);
+      sendAttendanceToBackend(today, userCoordinates.latitude, userCoordinates.longitude, "Check In");
+    } else {
+      if (currentTime.isBefore(checkOutStart)) {
+        Alert.alert('Check-out is allowed only after 4:00 PM');
         return;
       }
-
-      if (!location) {
-        Alert.alert('Please enter your location');
-        return;
-      }
-
-      if (!checkedIn) {
-        if (currentTime.isAfter(checkInDeadline)) {
-          Alert.alert('Check-in is allowed only before 10:00 AM');
-          return;
-        }
-
-        const newCompletedDays = {
-          ...completedDays,
-          [today]: { selected: true, selectedColor: '#FFD700', location },
-        };
-        setCompletedDays(newCompletedDays);
-        setCheckedIn(true);
-        setCurrentDate(today);
-
-        Alert.alert(`Checked in at ${location}`);
-      } else {
-        if (currentTime.isBefore(checkOutStart)) {
-          Alert.alert('Check-out is allowed only after 4:00 PM');
-          return;
-        }
-
-        const newCompletedDays = {
-          ...completedDays,
-          [today]: { selected: true, selectedColor: '#4CAF50', location },
-        };
-        setCompletedDays(newCompletedDays);
-        setCheckedIn(false);
-        setCurrentDate('');
-
-        Alert.alert(`Checked out from ${location}`);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Unable to fetch your location. Please try again.');
-      console.error(error);
+      const newCompletedDays = {
+        ...completedDays,
+        [today]: { selected: true, selectedColor: '#4CAF50', location },
+      };
+      setCompletedDays(newCompletedDays);
+      setCheckedIn(false);
+      setCurrentDate('');
+      Alert.alert(`Checked out from ${location}`);
+      sendAttendanceToBackend(today, userCoordinates.latitude, userCoordinates.longitude, "Check Out");
     }
   };
 
-  const markDays = () => {
-    const today = moment();
-    const updatedDays = { ...completedDays };
+  const sendAttendanceToBackend = async (date, latitude, longitude, status) => {
+    try {
+      const response = await fetch('https://2fe9-59-97-51-97.ngrok-free.app/kovais/Attendance/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date,
+          employee_attendance: employeeId,
+          status,
+          latitude,
+          longitude,
+          email: "nitish123@gmail.com",
+          password: "1234"
+        }),
+      });
 
-    for (const date in completedDays) {
-      if (completedDays[date].selected) {
-        updatedDays[date].selectedColor = completedDays[date].selectedColor || '#4CAF50';
-      } else {
-        updatedDays[date].selectedColor = '#FF0000';
-      }
+      const result = await response.json();
+      console.log('Attendance Response:', result);
+    } catch (error) {
+      console.error('Error sending attendance:', error);
     }
-
-    for (let i = 1; i <= 360; i++) {
-      const pastDate = today.clone().subtract(i, 'days').format('YYYY-MM-DD');
-      if (!updatedDays[pastDate]) {
-        updatedDays[pastDate] = { selected: false, selectedColor: '#FF0000' };
-      }
-    }
-
-    return updatedDays;
   };
 
   return (
     <View style={styles.container}>
-      {/* <Text style={styles.headerText}>Attendance Tracker</Text> */}
-      <Calendar
-        markedDates={markDays()}
-        style={styles.calendar}
-        theme={{
-          calendarBackground: '#f9f9f9',
-          textSectionTitleColor: '#2C2C2C',
-          todayTextColor: '#1976D2',
-          dayTextColor: '#444',
-          selectedDayBackgroundColor: '#FFD700',
-          selectedDayTextColor: '#fff',
-        }}
-      />
-      <TextInput
-        style={styles.locationInput}
-        placeholder="Enter your location"
-        placeholderTextColor="#888"
-        value={location}
-        onChangeText={setLocation}
-      />
-      <TouchableOpacity
-        style={checkedIn ? styles.checkOutButton : styles.checkInButton}
-        onPress={handleCheckInOut}
-      >
-        <Text style={styles.buttonText}>
-          {checkedIn ? 'Check Out' : 'Check In'}
-        </Text>
+      <Calendar markedDates={completedDays} style={styles.calendar} />
+      <TouchableOpacity onPress={fetchUserLocation}>
+        <TextInput style={styles.locationInput} placeholder="Tap to fetch location" value={location} editable={false} />
+      </TouchableOpacity>
+      <TouchableOpacity style={checkedIn ? styles.checkOutButton : styles.checkInButton} onPress={handleCheckInOut}>
+        <Text style={styles.buttonText}>{checkedIn ? 'Check Out' : 'Check In'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -151,13 +168,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#EDEDED',
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
   },
   calendar: {
     marginBottom: 20,
@@ -174,7 +184,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#FFF',
     marginBottom: 20,
-    color:'black',
+    color: 'black',
+    textAlign: 'center',
   },
   checkInButton: {
     height: 50,
