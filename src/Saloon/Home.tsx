@@ -22,7 +22,7 @@ const ContactList = ({ navigation }) => {
 
        const fetchData = async () => {
          try {
-           const response = await fetch('https://api.capture360.ai/kovais/get/gym/orders/');
+           const response = await fetch('https://1d7c-59-97-51-97.ngrok-free.app/kovais/get/saloon/orders/');
            if (!response.ok) {
              throw new Error(`HTTP error! Status: ${response.status}`);
            }

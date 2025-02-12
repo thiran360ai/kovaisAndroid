@@ -127,7 +127,7 @@ const AttendanceScreen = () => {
 
   const sendAttendanceToBackend = async (date, latitude, longitude, status) => {
     try {
-      const response = await fetch('https://c47d-59-97-51-97.ngrok-free.app/kovais/Attendance/', {
+      const response = await fetch('https://1d7c-59-97-51-97.ngrok-free.app/kovais/Attendance/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,8 +138,6 @@ const AttendanceScreen = () => {
           status,
           latitude,
           longitude,
-          email: "nitish123@gmail.com",
-          password: "1234"
         }),
       });
 
