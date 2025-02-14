@@ -71,7 +71,7 @@ const ContactList = ({navigation}) => {
   
          const fetchData = async () => {
            try {
-             const response = await fetch('https://1d7c-59-97-51-97.ngrok-free.app/kovais/get/gym/orders/');
+             const response = await fetch('https://8044-59-97-51-97.ngrok-free.app/kovais/get/gym/orders/');
              if (!response.ok) {
                throw new Error(`HTTP error! Status: ${response.status}`);
              }
@@ -185,7 +185,7 @@ const ContactList = ({navigation}) => {
     }
       
     try {
-      const response = await fetch('https://1d7c-59-97-51-97.ngrok-free.app/kovais/saloon/orders/', {
+      const response = await fetch('https://fd84-59-97-51-97.ngrok-free.app/kovais/gym/orders/', {
         method: 'post',
         headers: {
           'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ const ContactList = ({navigation}) => {
       
       Alert.alert('Success', 'New contact added successfully!');
       setAddModalVisible(false);
-      setNewContact({ name: '', timeslot: '', status: 'Active', plan: '', amount: '', joiningDate: '' ,expiry_date:''});
+      setNewContact({ name: '', timeslot: '', status: '', plan: '', amount: '', joiningDate: '' ,expiry_date:''});
       
     } catch (error) {
       Alert.alert('Error', 'Failed to add new contact. Please try again.');

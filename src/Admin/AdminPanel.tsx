@@ -8,7 +8,7 @@ const AdminPanel = () => {
   const [currentEmployee, setCurrentEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://192.168.1.11:8080/boys/total-users/';
+  const API_URL = 'https://b5f2-59-97-51-97.ngrok-free.app/kovais/total-employees/';
 
   // Fetch employee data
   const fetchEmployees = async () => {
@@ -19,8 +19,10 @@ const AdminPanel = () => {
         throw new Error('Failed to fetch employees');
       }
       const data = await response.json();
+      console.log(data);
+      
       // Update the employees state
-      setEmployees(data.users || []); // Assuming `data.users` contains the employee array
+      setEmployees(data || []); // Assuming `data.users` contains the employee array
     } catch (error) {
       Alert.alert('Error', error.message);
     } finally {
@@ -45,24 +47,47 @@ const AdminPanel = () => {
       Alert.alert('Error', 'Username and Email are required.');
       return;
     }
-
     if (currentEmployee.id) {
       // Edit existing employee
       setEmployees(prev =>
         prev.map(emp => (emp.id === currentEmployee.id ? currentEmployee : emp))
       );
-    } else {
-      // Add new employee
-      setEmployees(prev => [
-        ...prev,
-        { ...currentEmployee, id: prev.length + 1 },
-      ]);
-    }
+    }else {
+      console.log("Current Employee:", currentEmployee);
 
+      fetch('https://b5f2-59-97-51-97.ngrok-free.app/kovais/create-employee/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(currentEmployee)
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('API response:', data);  // Check the data here to confirm its structure
+        if (data.success) {  // Ensure the response contains the correct property, probably `success` instead of `sucess`
+          setEmployees(prev => [...prev, data]);
+          Alert.alert("Employee Added Sucessfully")
+        } else {
+          Alert.alert('Error', 'Failed to add employee. API might not be returning correct data.');
+        }
+      })
+      .catch(error => {
+        Alert.alert('Error', `Something went wrong: ${error.message}`);
+        console.error('Fetch Error:', error);
+      });
+      
+    }
+    
+    
     setModalVisible(false);
     setCurrentEmployee(null);
   };
-
   // Delete employee function
   const handleDelete = id => {
     Alert.alert(
@@ -92,7 +117,6 @@ const AdminPanel = () => {
       <Text style={styles.employeeDetails}>Location: {item.location}</Text>
       <Text style={styles.employeeDetails}>First Name: {item.first_name}</Text>
       <Text style={styles.employeeDetails}>Last Name: {item.last_name}</Text>
-
       <View style={styles.actionButtons}>
         <TouchableOpacity
           style={styles.editButton}
@@ -116,7 +140,6 @@ const AdminPanel = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Employee Details</Text>
-
       <TextInput
         style={styles.searchBar}
         placeholder="Search by username, role, or email"
@@ -124,7 +147,6 @@ const AdminPanel = () => {
         value={search}
         onChangeText={setSearch}
       />
-
       {loading ? (
         <Text style={styles.loadingText}>Loading...</Text>
       ) : (
@@ -140,14 +162,14 @@ const AdminPanel = () => {
         style={styles.addButton}
         onPress={() => {
           setCurrentEmployee({
-            id: null,
             username: '',
             email: '',
             role: '',
-            mobile: '',
+            password: '',
             location: '',
             first_name: '',
             last_name: '',
+            mobile:'',
           });
           setModalVisible(true);
         }}
@@ -173,7 +195,7 @@ const AdminPanel = () => {
               placeholderTextColor={'#555'}
               value={currentEmployee?.username}
               onChangeText={text =>
-                setCurrentEmployee({ ...currentEmployee, username: text })
+                setCurrentEmployee({ ...currentEmployee, username: text,mobile:'9952977811' })
               }
             />
             <TextInput
@@ -199,9 +221,9 @@ const AdminPanel = () => {
               style={styles.modalInput}
               placeholder="Mobile"
               placeholderTextColor={'#555'}
-              value={currentEmployee?.mobile}
+              value={currentEmployee?.password}
               onChangeText={text =>
-                setCurrentEmployee({ ...currentEmployee, mobile: text })
+                setCurrentEmployee({ ...currentEmployee, password: text })
               }
               keyboardType="phone-pad"
             />

@@ -27,7 +27,7 @@ const LoginPage = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const apiUrl = 'https://api.capture360.ai/kovais/Employee-login/';
+      const apiUrl = 'https://fd84-59-97-51-97.ngrok-free.app/kovais/Employee-login/';
       console.log('🔵 Sending Login Request:', { email, password });
       
       const controller = new AbortController();
@@ -64,10 +64,11 @@ const LoginPage = ({ navigation }) => {
         
         const roleRoutes = {
           admin: 'Dashboard',
-          gym: 'SalonHome',
-          member: 'GymHome',
+          saloon: 'SalonHome',
+          member: 'SalonHome',
           spa: 'SpaHome',
           hotel: 'HotelHome',
+          gym:'GymHome'
         };
         
         const nextScreen = roleRoutes[data.role] || null;

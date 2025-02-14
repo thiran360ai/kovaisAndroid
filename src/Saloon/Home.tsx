@@ -22,7 +22,7 @@ const ContactList = ({ navigation }) => {
 
        const fetchData = async () => {
          try {
-           const response = await fetch('https://1d7c-59-97-51-97.ngrok-free.app/kovais/get/saloon/orders/');
+           const response = await fetch('https://fd84-59-97-51-97.ngrok-free.app/kovais/get/saloon/orders/');
            if (!response.ok) {
              throw new Error(`HTTP error! Status: ${response.status}`);
            }
@@ -68,9 +68,9 @@ const ContactList = ({ navigation }) => {
     setActiveView(viewName);
   };
 
-  const updateContactStatus = (uid, newStatus, paymentMode = null) => {
+  const updateContactStatus = (id, newStatus, paymentMode = null) => {
     if (newStatus === 'SelectPayment') {
-      setSelectedForPayment(uid); // Show payment options
+      setSelectedForPayment(id); // Show payment options
     } else {
       setContacts((prevContacts) =>
         prevContacts.map((contact) =>
@@ -213,7 +213,7 @@ if(contacts.length > 0) {
             <TouchableOpacity
               style={[styles.cardButton, { backgroundColor: 'blue' }]}
               onPress={() => {
-                updateContactStatus(contact.Uid, 'Paid', 'Online');
+                updateContactStatus(contact.id, 'Paid', 'Online');
                 Alert.alert('Payment Received', `₹${contact.Amount} received Online.`);
               }}
             >

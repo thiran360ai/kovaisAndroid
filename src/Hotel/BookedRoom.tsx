@@ -1,37 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 
 // Sample data for booked rooms
-const bookedRooms: Room[] = [
-  {
-    id: 1,
-    name: 'Room 1',
-    type: 'Single',
-    guest: 'John Doe',
-    checkIn: '2024-11-25',
-    checkOut: '2024-11-27',
-    checkInTime: '2:00 PM',
-    cost: '100',
-    paymentMode: 'Online',
-    image: 'https://images5.alphacoders.com/347/347641.jpg',
-    hotelImage: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJIE_Rtm__M069i5fO3Yiz6oEk8mDUXs-AmQ&s',
-    status: 'paid',
-  },
-  {
-    id: 2,
-    name: 'Room 3',
-    type: 'Double',
-    guest: 'Jane Smith',
-    checkIn: '2024-11-24',
-    checkOut: '2024-11-26',
-    checkInTime: '3:00 PM',
-    cost: '150',
-    paymentMode: 'Cash',
-    image: 'https://c4.wallpaperflare.com/wallpaper/942/1003/665/sea-palm-trees-decline-bungalow-wallpaper-preview.jpg',
-    hotelImage: 'https://images5.alphacoders.com/347/347641.jpg',
-    status: 'pending',
-  },
-];
 type Room = {
   id: number;
   name: string;
@@ -50,6 +20,33 @@ type Room = {
 
 const BookedRoomsScreen: React.FC = () => {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [bookedRooms,setBookedRooms] = useState([]);
+    const [loading,setLoading] =useState(true);
+  
+useEffect(() => {
+
+       const fetchData = async () => {
+         try {
+           const response = await fetch('https://b5f2-59-97-51-97.ngrok-free.app/kovais/filter_hotel_order_by_status/?status=checked_out');
+           if (!response.ok) {
+             throw new Error(`HTTP error! Status: ${response.status}`);
+           }
+           const data = await response.json();
+           setBookedRooms(data);
+           console.log(bookedRooms,"from saloon page");
+           
+           
+         } catch (error) {
+           Alert.alert('Error', 'Failed to fetch data. Please try again.');
+           console.error(error);
+         }finally{
+           setLoading(false);
+           console.log(bookedRooms,"from saloon page");
+           
+         }
+       };
+       fetchData();
+     }, []);
 
   const handlePayment = (roomName: string, paymentMode: string) => {
     Alert.alert(
@@ -58,6 +55,41 @@ const BookedRoomsScreen: React.FC = () => {
       [{ text: 'OK', onPress: () => console.log('Alert Closed') }]
     );
   };
+   const handleCheckin = async (roomId, customerId, orderId) => {
+      Alert.alert(
+        'Checkout Confirmation',
+        `Are you sure you want to checkin room number ${roomId}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Yes',
+            onPress: async () => {
+              try {
+                const response = await fetch(`http://b5f2-59-97-51-97.ngrok-free.app/kovais/hotel/update/?customer_id=${customerId}&order_id=${orderId}`, {
+                  method: 'PUT',  // Change this to 'POST' if your API requires it
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ status: 'Checked In' }),
+                });
+    
+                if (!response.ok) {
+                  throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+    
+                // Remove the checked-out room from the state
+                setBookedRooms((prevRooms) => prevRooms.filter(room => room.roomNumber !== roomId));
+                Alert.alert('Success', `Room ${roomId} has been checked In.`);
+              } catch (error) {
+                Alert.alert('Error', 'Failed to checkout. Please try again.');
+                console.error(error);
+              }
+            },
+          },
+        ]
+      );
+    };
+   
 
   return (
     <View style={styles.container}>
@@ -80,30 +112,38 @@ const BookedRoomsScreen: React.FC = () => {
           {bookedRooms.map((room) => (
             <View key={room.id} style={styles.card}>
               <Text style={styles.roomName}>{room.name}</Text>
-              <Text style={styles.detail}>Type: {room.type}</Text>
-              <Image source={{ uri: room.image }} style={styles.image} />
+              <Text style={styles.detail}>Type: {room.category}</Text>
               <Text style={styles.detail}>Guest: {room.guest}</Text>
               <Text style={styles.detail}>Check-In Time: {room.checkInTime}</Text>
 
               {/* Display "Paid" label or payment buttons */}
-              {room.status === 'paid' ? (
-                <Text style={[styles.detail, styles.paidText]}>Paid</Text>
-              ) : (
-                <View style={styles.paymentButtons}>
-                  <TouchableOpacity
-                    style={[styles.button, styles.cashButton]}
-                    onPress={() => handlePayment(room.name, 'Cash')}
-                  >
-                    <Text style={styles.buttonText}>Cash</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.button, styles.onlinePayButton]}
-                    onPress={() => handlePayment(room.name, 'Online Pay')}
-                  >
-                    <Text style={styles.buttonText}>Online Pay</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              {room.status !== 'paid' ? (
+  <View>
+    <Text style={[styles.detail, styles.paidText]}>Paid</Text>
+    <TouchableOpacity
+      style={[styles.button, styles.checkInButton]}
+      onPress={() =>handleCheckin(room.roomNumber, room.customer_id, room.id)}
+    >
+      <Text style={styles.buttonText}>Check In</Text>
+    </TouchableOpacity>
+  </View>
+) : (
+  <View style={styles.paymentButtons}>
+    <TouchableOpacity
+      style={[styles.button, styles.cashButton]}
+      onPress={() => handlePayment(room.name, 'Cash')}
+    >
+      <Text style={styles.buttonText}>Cash</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.button, styles.onlinePayButton]}
+      onPress={() => handlePayment(room.name, 'Online Pay')}
+    >
+      <Text style={styles.buttonText}>Online Pay</Text>
+    </TouchableOpacity>
+  </View>
+)}
+
 
               <TouchableOpacity
                 style={[styles.button, styles.moreInfoButton]}
