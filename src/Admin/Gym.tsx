@@ -1,30 +1,46 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useMemo,useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList,Alert, TouchableOpacity, SafeAreaView } from 'react-native';
 
 const GymManagementPage = () => {
-  const [members] = useState([
-    { id: 1, name: 'John Doe', status: 'active', Purchase: 2000, payment: 'online' },
-    { id: 2, name: 'Jane Smith', status: 'inactive', Purchase: 0, payment: 'Cash' },
-    { id: 3, name: 'Alex Johnson', status: 'active', Purchase: 1500, payment: 'Cash' },
-    { id: 4, name: 'Emily Davis', status: 'inactive', Purchase: 0, payment: 'online' },
-    { id: 5, name: 'Chris Lee', status: 'active', Purchase: 3000, payment: 'online' },
-    { id: 6, name: 'Sarah Brown', status: 'active', Purchase: 1000, payment: 'Cash' },
-    { id: 7, name: 'Viky', status: 'active', Purchase: 2500, payment: 'online' },
-    { id: 8, name: 'Muthu', status: 'active', Purchase: 6000, payment: 'Cash' },
-  ]);
+  const [members,setMembers] = useState([]);
 
   const [numColumns, setNumColumns] = useState(2); // Initially 2 columns
-
+ const [loading,setLoading] =useState(true);
+     useEffect(() => {
+  
+         const fetchData = async () => {
+           try {
+             const response = await fetch('https://262c-59-97-51-97.ngrok-free.app/kovais/get/gym/orders/');
+             if (!response.ok) {
+               throw new Error(`HTTP error! Status: ${response.status}`);
+             }
+             const data = await response.json();
+             setMembers(data);
+             console.log(members,"from saloon page");
+             
+             
+           } catch (error) {
+             Alert.alert('Error', 'Failed to fetch data. Please try again.');
+             console.error(error);
+           }finally{
+             setLoading(false);
+             console.log(members,"from saloon page");
+             
+           }
+         };
+         fetchData();
+       }, []);
+ 
   // Calculate dynamic stats
   const stats = useMemo(() => {
     const activeMembers = members.filter((member) => member.status === 'active').length;
     const inactiveMembers = members.filter((member) => member.status === 'inactive').length;
     const productSales = members.reduce((total, member) => total + member.Purchase, 0);
     const totalCashOnline = members
-      .filter((member) => member.payment === 'online')
-      .reduce((total, member) => total + member.Purchase, 0);
+      .filter((member) => member.payment_type === "online")
+      .reduce((total, member) => total + member.amount, 0);
     const totalCashOffline = members
-      .filter((member) => member.payment === 'Cash')
+      .filter((member) => member.payment_type === 'offline')
       .reduce((total, member) => total + member.Purchase, 0);
 
     return {
@@ -71,9 +87,9 @@ const GymManagementPage = () => {
         item.status === 'active' ? styles.activeStatus : styles.inactiveStatus,
       ]}
     >
-      <Text style={styles.memberName}>{item.name}</Text>
-      <Text style={styles.memberPurchase}>Paid: ₹{item.Purchase}</Text>
-      <Text style={styles.memberPayment}>Payment: {item.payment}</Text>
+      <Text style={styles.memberName}>{item.id}</Text>
+      <Text style={styles.memberPurchase}>Paid: ₹{item.amount}</Text>
+      <Text style={styles.memberPayment}>Payment:{item.payment_type}</Text>
       <Text style={styles.memberStatus}>
         {item.status === 'active' ? '🟢 Active' : '🔴 Inactive'}
       </Text>

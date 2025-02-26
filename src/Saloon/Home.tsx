@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect,useCallback } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet, Animated, Dimensions, Image, ScrollView, Modal } from 'react-native';
 import axios from 'axios';
 const ContactList = ({ navigation }) => {
@@ -7,8 +7,13 @@ const ContactList = ({ navigation }) => {
   const [activeView, setActiveView] = useState('Total Orders');
   const [selectedForPayment, setSelectedForPayment] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-
+const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchData(); // Fetch new data
+        setRefreshing(false);
+      },[]);
   const handleCardPress = (serviceName) => {
     navigation.navigate(serviceName);
   };
@@ -18,11 +23,11 @@ const ContactList = ({ navigation }) => {
   };
 
   const [loading,setLoading] =useState(true);
-   useEffect(() => {
+   
 
        const fetchData = async () => {
          try {
-           const response = await fetch('https://fd84-59-97-51-97.ngrok-free.app/kovais/get/saloon/orders/');
+           const response = await fetch('https://f1e9-59-97-51-97.ngrok-free.app/kovais/get/saloon/orders/');
            if (!response.ok) {
              throw new Error(`HTTP error! Status: ${response.status}`);
            }
@@ -41,7 +46,7 @@ const ContactList = ({ navigation }) => {
          }
        };
        fetchData();
-     }, []);
+     
 
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
@@ -84,7 +89,7 @@ const ContactList = ({ navigation }) => {
   };
   
 
-  const pendingOrders = contacts.filter((contact) => contact.payment_status === 'Pending');
+  const pendingOrders = contacts.filter((contact) => contact.payment_status === 'pending');
   const paidOrders = contacts.filter((contact) => contact.payment_status === 'Paid');
   const completedOrders = contacts.filter((contact) => contact.payment_status === 'Completed');
   const totalCash = contacts

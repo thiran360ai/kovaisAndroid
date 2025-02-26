@@ -27,7 +27,7 @@ const LoginPage = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const apiUrl = 'https://fd84-59-97-51-97.ngrok-free.app/kovais/Employee-login/';
+      const apiUrl = 'https://f1e9-59-97-51-97.ngrok-free.app/kovais/Employee-login/';
       console.log('🔵 Sending Login Request:', { email, password });
       
       const controller = new AbortController();
@@ -56,17 +56,17 @@ const LoginPage = ({ navigation }) => {
         
         if (data.username ||data.id) {
           await AsyncStorage.setItem('username', data.username.toString());
-          await AsyncStorage.setItem('employeeId', data.id.toString());
+          await AsyncStorage.setItem('employeeId', data.user_id.toString());
 
-          console.log('✅ User ID Stored:', data.username,data.id);
-          Alert.alert('Success', `User ID ${data.username} ${data.id}stored successfully!`);
+          console.log('✅ User ID Stored:', data.username,data.user_id);
+          Alert.alert('Success', `User ID ${data.username} ${data.user_id}stored successfully!`);
         }
         
         const roleRoutes = {
           admin: 'Dashboard',
           saloon: 'SalonHome',
-          member: 'SalonHome',
           spa: 'SpaHome',
+          member:"HotelHome",
           hotel: 'HotelHome',
           gym:'GymHome'
         };

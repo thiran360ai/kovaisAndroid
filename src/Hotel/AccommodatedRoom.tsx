@@ -8,7 +8,7 @@ const AccommodatedRoomsScreen = ({ route }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('https://b5f2-59-97-51-97.ngrok-free.app/kovais/filter_hotel_order_by_status/?status=Checked In');
+        const response = await fetch('https://f1e9-59-97-51-97.ngrok-free.app/kovais/filter_hotel_order_by_status/?status=Checked In');
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -34,7 +34,7 @@ const AccommodatedRoomsScreen = ({ route }) => {
           text: 'Yes',
           onPress: async () => {
             try {
-              const response = await fetch(`http://b5f2-59-97-51-97.ngrok-free.app/kovais/hotel/update/?customer_id=${customerId}&order_id=${orderId}`, {
+              const response = await fetch(`https://f1e9-59-97-51-97.ngrok-free.app/kovais/hotel/update/?status=checked_out`, {
                 method: 'PUT',  // Change this to 'POST' if your API requires it
                 headers: {
                   'Content-Type': 'application/json',

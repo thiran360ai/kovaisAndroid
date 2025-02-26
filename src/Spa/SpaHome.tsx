@@ -22,7 +22,7 @@ const ContactList = ({ navigation }) => {
     
            const fetchData = async () => {
              try {
-               const response = await fetch('https://fd84-59-97-51-97.ngrok-free.app/kovais/get/spa/orders/');
+               const response = await fetch('https://d988-59-97-51-97.ngrok-free.app/kovais/get/spa/orders/');
                if (!response.ok) {
                  throw new Error(`HTTP error! Status: ${response.status}`);
                }

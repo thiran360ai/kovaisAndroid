@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import { Picker } from '@react-native-picker/picker';
 import moment from 'moment';
+import { RefreshControl } from 'react-native-gesture-handler';
 
 import {
   View, Text, TouchableOpacity, TextInput, Alert, StyleSheet, Animated, Dimensions, Image,ScrollView,Modal,} from 'react-native';
@@ -17,12 +18,10 @@ const ContactList = ({navigation}) => {
   const [selectedGender, setSelectedGender] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
-
-
-
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-
+  const [refreshing, setRefreshing] = useState(false);
+  
   const handleDateConfirm = (date) => {
     // Step 1: Set the selected date
     setSelectedDate(date);
@@ -67,30 +66,30 @@ const ContactList = ({navigation}) => {
 
   const [contacts, setContacts] = useState<{id:number;purchaseddate:string;status:string}>([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-  
          const fetchData = async () => {
            try {
-             const response = await fetch('https://8044-59-97-51-97.ngrok-free.app/kovais/get/gym/orders/');
+             const response = await fetch('https://d988-59-97-51-97.ngrok-free.app/kovais/get/gym/orders/');
              if (!response.ok) {
                throw new Error(`HTTP error! Status: ${response.status}`);
              }
              const data = await response.json();
              setContacts(data);
              console.log(contacts,"from gym page");
-             
-             
            } catch (error) {
              Alert.alert('Error', 'Failed to fetch data. Please try again.');
              console.error(error);
            }finally{
              setLoading(false);
              console.log(contacts,"from gym page");
-             
            }
          };
-         fetchData();
-       }, []);
+        
+       
+       const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchData(); // Fetch new data
+        setRefreshing(false);
+      },[]);
        const calculateDaysRemaining = (expiryDate) => {
         if (!expiryDate) return '';  // If no expiry date is provided, return an empty string
         
@@ -185,7 +184,7 @@ const ContactList = ({navigation}) => {
     }
       
     try {
-      const response = await fetch('https://fd84-59-97-51-97.ngrok-free.app/kovais/gym/orders/', {
+      const response = await fetch('https://d988-59-97-51-97.ngrok-free.app/kovais/gym/orders/', {
         method: 'post',
         headers: {
           'Content-Type': 'application/json',
@@ -222,8 +221,9 @@ const ContactList = ({navigation}) => {
   console.log(filteredContacts,"filtered contacts");
 
   return (
-    <View style={styles.container}>
-      {/* Navbar */}
+    
+    <View style={styles.container} >   
+        {/* Navbar */}
       <View style={styles.navbar}>
         <Text style={styles.navbarTitle}>GYM</Text>
         <TouchableOpacity onPress={toggleSidebar} style={styles.navbarButton}>
@@ -232,7 +232,7 @@ const ContactList = ({navigation}) => {
       </View>
 
       {/* Buttons */}
-      <View style={styles.buttonsContainer}>
+      <View style={styles.buttonsContainer} >
         <View style={styles.center}>
           <TouchableOpacity onPress={toggleAttendanceView} style={styles.actionButton}>
             <Image
@@ -294,7 +294,7 @@ const ContactList = ({navigation}) => {
 
       {/* Attendance View */}
       {showAttendanceView && (
-  <ScrollView style={styles.contentContainer}>
+  <ScrollView style={styles.contentContainer}  refreshControl={<RefreshControl refreshing={refreshing}  onRefresh={onRefresh} />}>
     <View style={styles.listContainer}>
       {contacts.map((contact) => (
         <View key={contact.id} style={styles.card}>
@@ -330,7 +330,8 @@ const ContactList = ({navigation}) => {
 
       {/* Contact List */}
       {!showAttendanceView && (
-        <ScrollView style={styles.contentContainer}>
+        <ScrollView style={styles.contentContainer} 
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} >
         {filteredContacts.map((contact) => (
           <View key={contact.id} style={styles.card}>
               <Text style={styles.cardTitle}>{contact.name}</Text>

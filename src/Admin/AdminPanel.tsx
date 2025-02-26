@@ -8,7 +8,7 @@ const AdminPanel = () => {
   const [currentEmployee, setCurrentEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'https://b5f2-59-97-51-97.ngrok-free.app/kovais/total-employees/';
+  const API_URL = 'https://f1e9-59-97-51-97.ngrok-free.app/kovais/total-employees/';
 
   // Fetch employee data
   const fetchEmployees = async () => {
@@ -42,54 +42,65 @@ const AdminPanel = () => {
   );
 
   // Save employee (Add or Edit)
-  const handleSaveEmployee = () => {
+  const handleSaveEmployee = async () => {
     if (!currentEmployee.username.trim() || !currentEmployee.email.trim()) {
       Alert.alert('Error', 'Username and Email are required.');
       return;
     }
-    if (currentEmployee.id) {
-      // Edit existing employee
-      setEmployees(prev =>
-        prev.map(emp => (emp.id === currentEmployee.id ? currentEmployee : emp))
-      );
-    }else {
-      console.log("Current Employee:", currentEmployee);
 
-      fetch('https://b5f2-59-97-51-97.ngrok-free.app/kovais/create-employee/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(currentEmployee)
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log('API response:', data);  // Check the data here to confirm its structure
-        if (data.success) {  // Ensure the response contains the correct property, probably `success` instead of `sucess`
-          setEmployees(prev => [...prev, data]);
-          Alert.alert("Employee Added Sucessfully")
+    if (currentEmployee.id) {
+      // Update employee
+      try {
+        const response = await fetch(
+          `https://f1e9-59-97-51-97.ngrok-free.app/kovais/update-employee/?employee_id=${currentEmployee.id}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentEmployee),
+          }
+        );
+
+        if (response.ok) {
+          setEmployees(prev =>
+            prev.map(emp => (emp.id === currentEmployee.id ? currentEmployee : emp))
+          );
+          Alert.alert('Success', 'Employee updated successfully!');
         } else {
-          Alert.alert('Error', 'Failed to add employee. API might not be returning correct data.');
+          const errorMessage = await response.text();
+          Alert.alert('Error', `Failed to update: ${errorMessage}`);
         }
-      })
-      .catch(error => {
+      } catch (error) {
+        Alert.alert('Error', 'Something went wrong.');
+        console.error('Update Error:', error);
+      }
+    } else {
+      // Create employee
+      try {
+        const response = await fetch('https://f1e9-59-97-51-97.ngrok-free.app/kovais/create-employee/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentEmployee),
+        });
+
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+        const data = await response.json();
+        if (data.success) {
+          setEmployees([...employees, data.employee]); // Ensure response contains `employee`
+          Alert.alert("Success", "Employee Added Successfully");
+        } else {
+          Alert.alert('Error', 'Failed to add employee.');
+        }
+      } catch (error) {
         Alert.alert('Error', `Something went wrong: ${error.message}`);
-        console.error('Fetch Error:', error);
-      });
-      
+      }
     }
-    
-    
+
     setModalVisible(false);
     setCurrentEmployee(null);
   };
-  // Delete employee function
-  const handleDelete = id => {
+// Delete employee function
+  const handleDelete = async (id) => {
     Alert.alert(
       'Delete Employee',
       'Are you sure you want to delete this employee?',
@@ -98,16 +109,33 @@ const AdminPanel = () => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            const updatedEmployees = employees.filter(employee => employee.id !== id);
-            setEmployees(updatedEmployees);
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `https://f1e9-59-97-51-97.ngrok-free.app/kovais/delete-employee/?employee_id=${id}`, 
+                {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' }
+                }
+              );
+  
+              if (response.ok) {
+                // Remove the employee from the local state
+                setEmployees(prevEmployees => prevEmployees.filter(employee => employee.id !== id));
+              } else {
+                Alert.alert('Error', 'Failed to delete the employee. Please try again.');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Something went wrong. Please check your connection.');
+              console.error('Delete Error:', error);
+            }
           },
         },
       ],
       { cancelable: true }
     );
   };
-
+  
   const renderEmployee = ({ item }) => (
     <View style={styles.card}>
       <Text style={styles.employeeName}>{item.username}</Text>
@@ -219,13 +247,22 @@ const AdminPanel = () => {
             />
             <TextInput
               style={styles.modalInput}
-              placeholder="Mobile"
+              placeholder="Password"
               placeholderTextColor={'#555'}
               value={currentEmployee?.password}
               onChangeText={text =>
                 setCurrentEmployee({ ...currentEmployee, password: text })
               }
               keyboardType="phone-pad"
+            />
+             <TextInput
+              style={styles.modalInput}
+              placeholder="Mobile Number"
+              placeholderTextColor={'#555'}
+              value={currentEmployee?.mobile}
+              onChangeText={text =>
+                setCurrentEmployee({ ...currentEmployee, mobile: text })
+              }
             />
             <TextInput
               style={styles.modalInput}

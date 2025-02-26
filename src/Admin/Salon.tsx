@@ -1,23 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 const SalonAdminPage = () => {
-  const [contacts, setContacts] = useState([
-    { Uid: 1, Name: 'Vikraam', TimeSlot: 1, Status: 'Pending', Amount: 2000 },
-    { Uid: 2, Name: 'Gokul', TimeSlot: 2, Status: 'Pending', Amount: 1000 },
-    { Uid: 3, Name: 'Raja', TimeSlot: 1, Status: 'Paid', Amount: 1500 },
-    { Uid: 4, Name: 'Rani', TimeSlot: 1, Status: 'Completed', Amount: 3000 },
-    { Uid: 5, Name: 'Raja', TimeSlot: 1, Status: 'Paid', Amount: 1500 },
-    { Uid: 6, Name: 'Rani', TimeSlot: 1, Status: 'Completed', Amount: 3000 },
-    { Uid: 7, Name: 'Raja', TimeSlot: 1, Status: 'Paid', Amount: 1500 },
-    { Uid: 8, Name: 'Rani', TimeSlot: 1, Status: 'Completed', Amount: 3000 },
-  ]);
-
+  const [contacts, setContacts] = useState([]);
   const totalOrders = contacts.length;
-  const pendingOrders = contacts.filter((order) => order.Status === 'Pending').length;
-  const paidOrders = contacts.filter((order) => order.Status === 'Paid').length;
-  const completedOrders = contacts.filter((order) => order.Status === 'Completed').length;
-  const totalRevenue = contacts.reduce((acc, order) => acc + order.Amount, 0);
+  const pendingOrders = contacts.filter((order) => order.payment_status === 'pending').length;
+  const paidOrders = contacts.filter((order) => order.payment_status === 'paid').length;
+  const completedOrders = contacts.filter((order) => order.payment_status === 'Completed').length;
+  const totalRevenue = parseFloat(contacts.reduce((acc, order) => acc + order.amount, 0));
+ const [loading,setLoading] =useState(true);
+   useEffect(() => {
+
+       const fetchData = async () => {
+         try {
+           const response = await fetch('https://262c-59-97-51-97.ngrok-free.app/kovais/get/saloon/orders/');
+           if (!response.ok) {
+             throw new Error(`HTTP error! Status: ${response.status}`);
+           }
+           const data = await response.json();
+           setContacts(data);
+           console.log(contacts,"from saloon page");
+           
+           
+         } catch (error) {
+           Alert.alert('Error', 'Failed to fetch data. Please try again.');
+           console.error(error);
+         }finally{
+           setLoading(false);
+           console.log(contacts,"from saloon page");
+           
+         }
+       };
+       fetchData();
+     }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -54,15 +69,15 @@ const SalonAdminPage = () => {
                 styles.orderItem,
                 order.Status === 'Completed'
                   ? styles.completedOrder
-                  : order.Status === 'Paid'
+                  : order.payment_status === 'paid'
                   ? styles.paidOrder
                   : styles.pendingOrder,
               ]}
             >
-              <Text style={styles.orderText}>Order #{order.Uid}</Text>
+              <Text style={styles.orderText}>Order #{order.customer_id}</Text>
               <Text style={styles.orderDetails}>Name: {order.Name}</Text>
-              <Text style={styles.orderDetails}>Pay: ₹{order.Amount}</Text>
-              <Text style={styles.orderStatus}>Status: {order.Status}</Text>
+              <Text style={styles.orderDetails}>Pay: ₹{order.amount}</Text>
+              <Text style={styles.orderStatus}>Status: {order.payment_status}</Text>
             </View>
           ))}
         </View>
